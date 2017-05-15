@@ -110,7 +110,7 @@ class MainHandler(tornado.web.RequestHandler):
             pr = int(body['pull_request']['number'])
             if action == "opened" or action == "synchronize":
                 message = run_clang_format(pr)
-                if not message:
+                if message:
                     msg = """
 Hi,
 I've run clang-format and found that the code needs formatting.
