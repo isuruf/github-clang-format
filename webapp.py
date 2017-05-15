@@ -109,17 +109,17 @@ class MainHandler(tornado.web.RequestHandler):
             title = body['pull_request']['title']
             pr = int(body['pull_request']['number'])
             if action == "opened" or action == "synchronize":
-                message = run_clang_format(pr)
-                if message:
+                commit = run_clang_format(pr)
+                if commit:
                     msg = """
 Hi,
 I've run clang-format and found that the code needs formatting.
 Here's a commit that fixes this. {}
 """
-                    msg = msg.format(message)
+                    msg = msg.format(commit)
                     gh = github.Github(get_github_token())
                     issue = get_repo(gh).get_issue(pr)
-                    issue.create_comment(message)
+                    issue.create_comment(msg)
 
 def main():
     application = tornado.web.Application([
