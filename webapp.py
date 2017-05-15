@@ -88,11 +88,11 @@ def run_clang_format(pr_id):
         actor = Actor(gh.get_user().name, "{}@users.noreply.github.com".format(gh_username))
         if len(repo.index.diff(None)) > 0:
             repo.git.add(u=True)
-            repo.index.commit("Format using clang-format-{}".format(version), author=actor, committer=actor)
+            commit = repo.index.commit("Format using clang-format-{}".format(version), author=actor, committer=actor)
             dest_url = "https://{}@github.com/{}/{}".format(get_github_token(), gh_username, gh_reponame)
             remote = repo.create_remote(gh_username, url=dest_url)
             remote.push(refspec='{}:{}'.format("HEAD", "format-pr{}".format(pr_id)), force=True)
-            return "https://github.com/{}/{}/commit/{}".format(gh_username, gh_reponame, hexsha)
+            return "https://github.com/{}/{}/commit/{}".format(gh_username, gh_reponame, commit.hexsha)
         return
 
 
