@@ -95,7 +95,7 @@ To use the commit you can do
     git apply format.diff
 """
             msg = msg.format(commit_url)
-            issue = gh_repo.get_issue(pr)
+            issue = gh_repo.get_issue(pr_id)
             issue.create_comment(msg)
 
         return
