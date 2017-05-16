@@ -91,10 +91,10 @@ Here's a commit that fixes this. {}
 
 To use the commit you can do
 
-    curl -o format.diff https://github.com/isuruf-bot/symengine/commit/c5cb8b00ebce5f8d415a9d1d1b32e4472707bcec.diff
+    curl -o format.diff {}.diff
     git apply format.diff
 """
-            msg = msg.format(commit_url)
+            msg = msg.format(commit_url, commit_url)
             issue = gh_repo.get_issue(pr_id)
             issue.create_comment(msg)
 
