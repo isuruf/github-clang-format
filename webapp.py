@@ -81,7 +81,23 @@ def run_clang_format(pr_id, gh_repo, gh):
             dest_url = "https://{}@github.com/{}/{}".format(get_github_token(), gh_botname, gh_reponame)
             remote = repo.create_remote(gh_botname, url=dest_url)
             remote.push(refspec='{}:{}'.format("HEAD", "format-{}-pr-{}".format(gh_username, pr_id)), force=True)
-            return "https://github.com/{}/{}/commit/{}".format(gh_botname, gh_reponame, commit.hexsha)
+            commit_url = "https://github.com/{}/{}/commit/{}".format(gh_botname, gh_reponame, commit.hexsha)
+
+            msg = """
+Hi,
+
+I've run clang-format and found that the code needs formatting.
+Here's a commit that fixes this. {}
+
+To use the commit you can do
+
+    curl -o format.diff https://github.com/isuruf-bot/symengine/commit/c5cb8b00ebce5f8d415a9d1d1b32e4472707bcec.diff
+    git apply format.diff
+"""
+            msg = msg.format(commit_url)
+            issue = gh_repo.get_issue(pr)
+            issue.create_comment(msg)
+
         return
 
 
