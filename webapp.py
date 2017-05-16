@@ -25,12 +25,6 @@ def get_github_token():
         raise RuntimeError("GH_TOKEN not available")
     return tok
 
-def get_repo(gh):
-    repo = os.environ.get('GH_REPO')
-    if not repo:
-        raise RuntimeError("GH_REPO not available")
-    return gh.get_repo(repo)
-
 def get_all_files(tmp_dir):
     l = []
     for root, directories, filenames in os.walk(tmp_dir):
@@ -41,23 +35,17 @@ def get_all_files(tmp_dir):
             l.append(os.path.relpath(os.path.join(root, filename), tmp_dir)) 
     return l
     
-def run_clang_format(pr_id):
-    gh = github.Github(get_github_token())
+def run_clang_format(pr_id, gh_repo, gh):
 
     with tmp_directory() as tmp_dir:
-        repo = Repo.clone_from(get_repo(gh).clone_url, tmp_dir)
+        repo = Repo.clone_from(gh_repo.clone_url, tmp_dir)
 
         # Retrieve the PR refs.
-        try:
-            repo.remotes.origin.fetch([
-                'pull/{pr}/merge:pull/{pr}/merge'.format(pr=pr_id)
-            ])
-            ref_merge = repo.refs['pull/{pr}/merge'.format(pr=pr_id)]
-        except GitCommandError:
-            # Either `merge` doesn't exist because the PR was opened
-            # in conflict or it is closed.
-            return
-        ref_merge.checkout(force=True)
+        repo.remotes.origin.fetch([
+            'pull/{pr}/head:pull/{pr}/head'.format(pr=pr_id)
+        ])
+        ref_head = repo.refs['pull/{pr}/head'.format(pr=pr_id)]
+        ref_head.checkout(force=True)
         files = get_all_files(tmp_dir)
         includes = []
         excludes = []
@@ -83,16 +71,17 @@ def run_clang_format(pr_id):
                 final_file_list.append(f)
         for f in final_file_list:
             subprocess.check_call(["clang-format-{}".format(version), "-i", f], cwd=tmp_dir)
-        gh_username = gh.get_user().login
-        gh_reponame = get_repo(gh).name
-        actor = Actor(gh.get_user().name, "{}@users.noreply.github.com".format(gh_username))
+        gh_botname = gh.get_user().login
+        gh_username = gh_repo.full_name.split("/")[0]
+        gh_reponame = gh_repo.name
+        actor = Actor(gh.get_user().name, "{}@users.noreply.github.com".format(gh_botname))
         if len(repo.index.diff(None)) > 0:
             repo.git.add(u=True)
             commit = repo.index.commit("Format using clang-format-{}".format(version), author=actor, committer=actor)
-            dest_url = "https://{}@github.com/{}/{}".format(get_github_token(), gh_username, gh_reponame)
-            remote = repo.create_remote(gh_username, url=dest_url)
-            remote.push(refspec='{}:{}'.format("HEAD", "format-pr{}".format(pr_id)), force=True)
-            return "https://github.com/{}/{}/commit/{}".format(gh_username, gh_reponame, commit.hexsha)
+            dest_url = "https://{}@github.com/{}/{}".format(get_github_token(), gh_botname, gh_reponame)
+            remote = repo.create_remote(gh_botname, url=dest_url)
+            remote.push(refspec='{}:{}'.format("HEAD", "format-{}-pr-{}".format(gh_username, pr_id)), force=True)
+            return "https://github.com/{}/{}/commit/{}".format(gh_botname, gh_reponame, commit.hexsha)
         return
 
 
@@ -108,17 +97,20 @@ class MainHandler(tornado.web.RequestHandler):
             action = body['action']
             title = body['pull_request']['title']
             pr = int(body['pull_request']['number'])
+            repo_slug = body['repository']['full_name']
             if action == "opened" or action == "synchronize":
-                commit = run_clang_format(pr)
+                gh = github.Github(get_github_token())
+                gh_repo = gh.get_repo(repo_slug)
+                commit = run_clang_format(pr, gh_repo, gh)
                 if commit:
                     msg = """
 Hi,
+
 I've run clang-format and found that the code needs formatting.
 Here's a commit that fixes this. {}
 """
                     msg = msg.format(commit)
-                    gh = github.Github(get_github_token())
-                    issue = get_repo(gh).get_issue(pr)
+                    issue = gh_repo.get_issue(pr)
                     issue.create_comment(msg)
 
 def main():
