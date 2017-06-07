@@ -70,6 +70,7 @@ def run_clang_format(pr_id, gh_repo, gh):
         for f in files:
             if any(fnmatch(f, include) for include in includes) and not(any(fnmatch(f, exclude) for exclude in excludes)):
                 final_file_list.append(f)
+        print(final_file_list)
         for f in final_file_list:
             subprocess.check_call(["clang-format-{}".format(version), "-i", f], cwd=tmp_dir)
         gh_botname = gh.get_user().login
