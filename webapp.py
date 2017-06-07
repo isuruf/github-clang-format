@@ -52,7 +52,7 @@ def run_clang_format(pr_id, gh_repo, gh):
         version = ""
         clang_format_file = '{}/.clang-format'.format(tmp_dir)
         if not os.path.isfile(clang_format_file):
-            return
+            print("clang-format file not found")
         with open(clang_format_file) as f:
             content = f.readlines()
         content = [x.strip() for x in content]
@@ -63,8 +63,9 @@ def run_clang_format(pr_id, gh_repo, gh):
                 includes.append(line[len("# include: "):])
             if line.startswith("# exclude: "):
                 excludes.append(line[len("# exclude: "):])
+        print(version, includes, excludes)
         if not version in ["3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9"]:
-            return
+            print("clang-format version not supported")
         final_file_list = []
         for f in files:
             if any(fnmatch(f, include) for include in includes) and not(any(fnmatch(f, exclude) for exclude in excludes)):
