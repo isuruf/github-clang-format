@@ -75,6 +75,7 @@ def run_clang_format(pr_id, gh_repo, gh):
         gh_username = gh_repo.full_name.split("/")[0]
         gh_reponame = gh_repo.name
         actor = Actor(gh.get_user().name, "{}@users.noreply.github.com".format(gh_botname))
+        print(subprocess.check_output(["git", "diff"], cwd=tmp_dir))
         if len(repo.index.diff(None)) > 0:
             repo.git.add(u=True)
             commit = repo.index.commit("Format using clang-format-{}".format(version), author=actor, committer=actor)
