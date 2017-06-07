@@ -115,19 +115,10 @@ class MainHandler(tornado.web.RequestHandler):
             pr = int(body['pull_request']['number'])
             repo_slug = body['repository']['full_name']
             if action == "opened" or action == "synchronize":
+                print("Linting PR {} from {}".format(pr, repo_slug))
                 gh = github.Github(get_github_token())
                 gh_repo = gh.get_repo(repo_slug)
-                commit = run_clang_format(pr, gh_repo, gh)
-                if commit:
-                    msg = """
-Hi,
-
-I've run clang-format and found that the code needs formatting.
-Here's a commit that fixes this. {}
-"""
-                    msg = msg.format(commit)
-                    issue = gh_repo.get_issue(pr)
-                    issue.create_comment(msg)
+                run_clang_format(pr, gh_repo, gh)
 
 def main():
     application = tornado.web.Application([
