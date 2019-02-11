@@ -78,6 +78,8 @@ def run_clang_format(pr_id, gh_repo, gh):
         gh_reponame = gh_repo.name
         actor = Actor(gh.get_user().name, "{}@users.noreply.github.com".format(gh_botname))
         print(subprocess.check_output(["git", "diff"], cwd=tmp_dir))
+        issue = gh_repo.get_issue(pr_id)
+        last_comment = next((c for c in reversed(list(issue.get_comments())) if c.user.login==gh_botname), None)
         if len(repo.index.diff(None)) > 0:
             repo.git.add(u=True)
             commit = repo.index.commit("Format using clang-format-{}".format(version), author=actor, committer=actor)
@@ -98,8 +100,17 @@ To use the commit you can do
     git apply format.diff
 """
             msg = msg.format(commit_url, commit_url)
-            issue = gh_repo.get_issue(pr_id)
-            issue.create_comment(msg)
+            if last_comment is None:
+                issue.create_comment(msg)
+        else:
+            msg = """
+Hi,
+
+I've run clang-format and found that the code formatting is good.
+Good job!
+"""
+        if last_comment is not None:
+            last_comment.edit(msg)
 
         return
 
