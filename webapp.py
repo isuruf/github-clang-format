@@ -107,7 +107,8 @@ To use the commit you can do
 Hi,
 
 I've run clang-format and found that the code formatting is good.
-Good job!
+
+Thanks for fixing the formatting.
 """
         if last_comment is not None:
             last_comment.edit(msg)
